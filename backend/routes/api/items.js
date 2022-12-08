@@ -5,6 +5,7 @@ var Comment = mongoose.model("Comment");
 var User = mongoose.model("User");
 var auth = require("../auth");
 const { sendEvent } = require("../../lib/event");
+const { simulateSlowLoad } = require("../../lib/slow");
 
 // Preload item objects on routes with ':item'
 router.param("item", function(req, res, next, slug) {
@@ -158,16 +159,18 @@ router.post("/", auth.required, function(req, res, next) {
 
 // return a item
 router.get("/:item", auth.optional, function(req, res, next) {
-  Promise.all([
-    req.payload ? User.findById(req.payload.id) : null,
-    req.item.populate("seller").execPopulate()
-  ])
-    .then(function(results) {
-      var user = results[0];
+  simulateSlowLoad(2000).then(() => {
+    Promise.all([
+      req.payload ? User.findById(req.payload.id) : null,
+      req.item.populate("seller").execPopulate()
+    ])
+      .then(function(results) {
+        var user = results[0];
 
-      return res.json({ item: req.item.toJSONFor(user) });
-    })
-    .catch(next);
+        return res.json({ item: req.item.toJSONFor(user) });
+      })
+      .catch(next);
+  })
 });
 
 // update item
@@ -261,30 +264,32 @@ router.delete("/:item/favorite", auth.required, function(req, res, next) {
 
 // return an item's comments
 router.get("/:item/comments", auth.optional, function(req, res, next) {
-  Promise.resolve(req.payload ? User.findById(req.payload.id) : null)
-    .then(function(user) {
-      return req.item
-        .populate({
-          path: "comments",
-          populate: {
-            path: "seller"
-          },
-          options: {
-            sort: {
-              createdAt: "desc"
+  simulateSlowLoad(2000).then(() => {
+    Promise.resolve(req.payload ? User.findById(req.payload.id) : null)
+      .then(function (user) {
+        return req.item
+          .populate({
+            path: "comments",
+            populate: {
+              path: "seller"
+            },
+            options: {
+              sort: {
+                createdAt: "desc"
+              }
             }
-          }
-        })
-        .execPopulate()
-        .then(function(item) {
-          return res.json({
-            comments: req.item.comments.map(function(comment) {
-              return comment.toJSONFor(user);
-            })
+          })
+          .execPopulate()
+          .then(function (item) {
+            return res.json({
+              comments: req.item.comments.map(function (comment) {
+                return comment.toJSONFor(user);
+              })
+            });
           });
-        });
-    })
-    .catch(next);
+      })
+      .catch(next);
+  });
 });
 
 // create a new comment

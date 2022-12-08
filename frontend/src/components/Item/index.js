@@ -44,13 +44,22 @@ class Item extends React.Component {
     );
   }
 
+  loadingSpinner() {
+    return (
+      <div>
+        <h1>LOADING</h1>
+        <img alt={"Loading..."} src={"/spinner.gif"} width={200} />
+      </div>
+    );
+  }
+
   render() {
     return (
       <div className="container page" id="item-container">
         <div className="text-dark">
           <div className="row bg-white p-4">
             {!this.props.item ? (
-              "Loading item..."
+              this.loadingSpinner()
             ) : (
               <>
                 <div className="col-6">
@@ -95,7 +104,7 @@ class Item extends React.Component {
 
           <div className="row bg-light-gray p-4">
             {!this.props.comments ? (
-              "Loading comments..."
+              this.loadingSpinner()
             ) : (
               <CommentContainer
                 comments={this.props.comments || []}
