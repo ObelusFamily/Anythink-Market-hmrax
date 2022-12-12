@@ -21,7 +21,6 @@ const mapDispatchToProps = (dispatch) => ({
 
 class Item extends React.Component {
   async componentDidMount() {
-    //wwo
     const [item, comments] = await getItemAndComments(
       this.props.match.params.id
     );
